@@ -1,0 +1,12 @@
+# Maven
+target/
+pom.xml.*
+dependency-reduced-pom.xml
+release.properties
+
+# IntelliJ
+.idea/
+*.iml
+
+# Test Files
+test.yaml

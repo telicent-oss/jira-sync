@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+SCRIPT_DIR=$(dirname "${BASH_SOURCE[0]}")
+SCRIPT_DIR=$(cd "${SCRIPT_DIR}" && pwd)
+
+# Locate the JAR File
+TARGET_JAR="jira-syncer.jar"
+FOUND_JAR=""
+if [ -f "${SCRIPT_DIR}/bin/${TARGET_JAR}" ]; then
+  FOUND_JAR="${SCRIPT_DIR}/bin/${TARGET_JAR}"
+elif [ -f "${SCRIPT_DIR}/target/${TARGET_JAR}" ]; then
+  FOUND_JAR="${SCRIPT_DIR}/target/${TARGET_JAR}"
+elif [ -f "${SCRIPT_DIR}/pom.xml" ]; then
+  echo "Required JAR file ${TARGET_FILE} not found but this is a development environment, please run mvn clean install first"
+fi
+
+if [ -z "${FOUND_JAR}" ]; then
+  echo "Failed to locate required JAR file ${TARGET_JAR}" >2
+  exit 255
+fi
+
+java -jar "${FOUND_JAR}" "$@"
