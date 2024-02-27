@@ -10,6 +10,8 @@ public class EnhancedComplexIssueInputFieldValueJsonGenerator extends ComplexIss
     @Override
     public Object generateFieldValueForJson(Object rawValue) throws JSONException {
         if (rawValue instanceof Map<?, ?>) {
+            // HACK: JIRA's code doesn't handle raw Map, unless we wrap in a ComplexIssueInputFieldValue, so we just
+            //       do that as a workaround
             return super.generateFieldValueForJson(new ComplexIssueInputFieldValue((Map<String, Object>) rawValue));
         }
         return super.generateFieldValueForJson(rawValue);

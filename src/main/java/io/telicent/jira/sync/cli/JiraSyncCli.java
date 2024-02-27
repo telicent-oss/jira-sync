@@ -22,7 +22,7 @@ import io.telicent.jira.sync.cli.commands.*;
             commands = {
                 ComputeCrossLinks.class,
                 IssueTypes.class,
-                OneGitHubToJira.class,
+                GitHubToJira.class,
                 RemoteLinks.class
             }
         )
