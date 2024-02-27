@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.telicent.public</groupId>
     <artifactId>jira-syncer</artifactId>
@@ -21,7 +22,8 @@
         <plugin.shade>3.3.0</plugin.shade>
         <plugin.surefire>3.0.0-M7</plugin.surefire>
 
-        <dependency.airline>2.9.0</dependency.airline>
+        <dependency.airline>3.0.0</dependency.airline>
+        <dependency.adf>0.35.1</dependency.adf>
         <dependency.github>1.308</dependency.github>
         <dependency.jackson>2.16.1</dependency.jackson>
         <dependency.okhttp>4.9.2</dependency.okhttp>
@@ -57,6 +59,13 @@
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-yaml</artifactId>
             <version>${dependency.jackson}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.30</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -99,6 +108,29 @@
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-rest-java-client-app</artifactId>
             <version>5.2.7</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>33.0.0-jre</version>
+        </dependency>
+
+        <!-- Atlassian Document Format -->
+        <dependency>
+            <groupId>com.atlassian.adf</groupId>
+            <artifactId>adf-builder-java</artifactId>
+            <version>${dependency.adf}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.adf</groupId>
+            <artifactId>adf-builder-java-jackson2</artifactId>
+            <version>${dependency.adf}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.atlassian.adf</groupId>
+            <artifactId>adf-builder-java-markdown</artifactId>
+            <version>${dependency.adf}</version>
         </dependency>
 
         <!-- Test Dependencies -->
@@ -147,7 +179,8 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>io.telicent.jira.sync.cli.JiraSyncCli</mainClass>
                                 </transformer>
                             </transformers>

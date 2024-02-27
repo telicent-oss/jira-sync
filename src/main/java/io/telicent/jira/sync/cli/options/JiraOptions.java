@@ -1,12 +1,12 @@
 package io.telicent.jira.sync.cli.options;
 
-import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.JiraRestClientFactory;
 import com.atlassian.jira.rest.client.auth.BasicHttpAuthenticationHandler;
-import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import com.github.rvesse.airline.annotations.restrictions.Required;
+import io.telicent.jira.sync.client.EnhancedJiraRestClient;
+import io.telicent.jira.sync.client.EnhancedJiraRestClientFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -39,16 +39,16 @@ public class JiraOptions {
     @NotBlank
     private String jiraProjectKey;
 
-    private JiraRestClient instance = null;
+    private EnhancedJiraRestClient instance = null;
 
-    public JiraRestClient connect() {
+    public EnhancedJiraRestClient connect() {
         if (this.instance != null) {
             return this.instance;
         }
 
-        JiraRestClientFactory factory = new AsynchronousJiraRestClientFactory();
+        JiraRestClientFactory factory = new EnhancedJiraRestClientFactory();
         try (BufferedReader reader = new BufferedReader(new FileReader(this.jiraTokenFile))) {
-            this.instance = factory.createWithAuthenticationHandler(URI.create(this.jiraUrl),
+            this.instance = (EnhancedJiraRestClient) factory.create(URI.create(this.jiraUrl),
                                                                     new BasicHttpAuthenticationHandler(
                                                                             this.jiraUsername, reader.readLine()));
         } catch (IOException e) {

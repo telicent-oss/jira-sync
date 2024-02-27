@@ -7,10 +7,7 @@ import com.github.rvesse.airline.annotations.help.ExitCodes;
 import com.github.rvesse.airline.parser.ParseResult;
 import com.github.rvesse.airline.parser.errors.ParseException;
 import com.github.rvesse.airline.parser.errors.handlers.CollectAll;
-import io.telicent.jira.sync.cli.commands.Help;
-import io.telicent.jira.sync.cli.commands.IssueTypes;
-import io.telicent.jira.sync.cli.commands.OneGitHubToJira;
-import io.telicent.jira.sync.cli.commands.SyncCommand;
+import io.telicent.jira.sync.cli.commands.*;
 
 //@formatter:off
 @Cli(name = "jira-sync",
@@ -23,8 +20,10 @@ import io.telicent.jira.sync.cli.commands.SyncCommand;
         @Group(
             name = "issues",
             commands = {
+                ComputeCrossLinks.class,
                 IssueTypes.class,
-                OneGitHubToJira.class
+                OneGitHubToJira.class,
+                RemoteLinks.class
             }
         )
      },
