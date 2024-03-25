@@ -16,11 +16,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
+import com.github.rvesse.airline.annotations.restrictions.RequireOnlyOne;
 import com.github.rvesse.airline.annotations.restrictions.Required;
 import io.atlassian.util.concurrent.Promise;
 import io.telicent.jira.sync.cli.options.CrossLinkOptions;
+import io.telicent.jira.sync.cli.options.JiraIssueTypeMappingOptions;
 import io.telicent.jira.sync.client.AsynchronousRemoteLinksClient;
-import io.telicent.jira.sync.client.EnhancedIssuesRestClient;
 import io.telicent.jira.sync.client.EnhancedJiraRestClient;
 import io.telicent.jira.sync.client.model.BasicRemoteLink;
 import io.telicent.jira.sync.client.model.CrossLinks;
@@ -28,9 +29,8 @@ import io.telicent.jira.sync.client.model.RemoteLinkInput;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.github.*;
 
+import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 
 @Command(name = "to-jira", description = "Command for synchronising GitHub Issues to JIRA")
@@ -46,12 +46,14 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
     @Required
     private String ghRepo;
 
-    @Option(name = "--jira-issue-type", title = "JiraIssueTypeId", description = "Specifies the ID of the JIRA Issue Type the GitHub Issues should be synchronised to JIRA as")
-    @Required
-    private int jiraIssueType;
+    @AirlineModule
+    private JiraIssueTypeMappingOptions jiraIssueTypeMappingOptions = new JiraIssueTypeMappingOptions();
 
     @AirlineModule
     private CrossLinkOptions crossLinkOptions = new CrossLinkOptions();
+
+    @Option(name = "--dry-run", description = "When specified print what would happen without actually performing the actions i.e. preview what the results of running the command would be")
+    private boolean dryRun = false;
 
     @Override
     public int run() {
@@ -71,7 +73,8 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                         throw new RuntimeException(
                                 "GitHub Repository " + this.ghRepo + " does not contain Issue ID " + this.ghIssueId);
                     } else if (issue.isPullRequest()) {
-                        System.out.println("GitHub Repository " + this.ghRepo + " Issue ID " + this.ghIssueId + " is a PR for which sync is not supported");
+                        System.out.println(
+                                "GitHub Repository " + this.ghRepo + " Issue ID " + this.ghIssueId + " is a PR for which sync is not supported");
                     } else {
                         this.syncOneIssue(crossLinks, jiraRestClient, issue);
                     }
@@ -103,34 +106,46 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
 
         // Prepare the JIRA Issue content
         IssueRestClient issues = jiraRestClient.getIssueClient();
-        IssueInput input = new IssueInputBuilder().setIssueTypeId((long) this.jiraIssueType)
-                                                  .setProjectKey(this.jiraOptions.getProjectKey())
-                                                  .setFieldInput(new FieldInput(IssueFieldId.DESCRIPTION_FIELD, translateMarkdownToAdf(issue)))
-                                                  //.setDescription(translateMarkdownToAdf(issue))
-                                                  .setSummary(issue.getTitle())
-                                                  // TODO Copy assignee where relevant
-                                                  // TODO Figure out if/how to copy labels across
-                                                  .build();
+        long jiraIssueType = this.jiraIssueTypeMappingOptions.getJiraIssueType(issue);
+        System.out.println("GitHub issue " + gitHubIssueId + " will be synced as JIRA Issue Type " + jiraIssueType);
+        IssueInput input =
+                new IssueInputBuilder().setIssueTypeId(jiraIssueType)
+                                       .setProjectKey(this.jiraOptions.getProjectKey())
+                                       .setFieldInput(new FieldInput(IssueFieldId.DESCRIPTION_FIELD,
+                                                                     translateMarkdownToAdf(issue)))
+                                       .setSummary(issue.getTitle())
+                                       // TODO Copy assignee where relevant
+                                       // TODO Figure out if/how to copy labels across
+                                       .build();
 
         if (StringUtils.isNotBlank(jiraKey)) {
             System.out.println("GitHub Issue " + gitHubIssueId + " syncs to existing JIRA Issue " + jiraKey);
-            Promise<Void> updated = issues.updateIssue(jiraKey, input);
-            updated.claim();
-            System.out.println("Updated JIRA Issue " + jiraKey);
+            if (!this.dryRun) {
+                Promise<Void> updated = issues.updateIssue(jiraKey, input);
+                updated.claim();
+                System.out.println("Updated JIRA Issue " + jiraKey);
+            } else {
+                System.out.println("[DRY RUN] Would have updated JIRA Issue " + jiraKey);
+            }
         } else {
             // Need to create a new JIRA Issue
-            Promise<BasicIssue> creation = issues.createIssue(input);
-            BasicIssue created = creation.claim();
-            System.out.println("Created new JIRA Issue " + created.getKey());
+            if (!this.dryRun) {
+                Promise<BasicIssue> creation = issues.createIssue(input);
+                BasicIssue created = creation.claim();
+                System.out.println("Created new JIRA Issue " + created.getKey());
 
-            // Update the cross-links with the new links
-            // NB - We don't update the last sync'd ID as ComputeCrossLinks does because there might be issue creation
-            //      happening on the JIRA side which we haven't sync'd the other way yet
-            crossLinks.getGitHubToJira().setLinks(gitHubIssueId, created.getKey());
-            crossLinks.getJiraToGitHub().setLinks(created.getKey(), gitHubIssueId);
-            this.crossLinkOptions.saveCrossLinks();
+                // Update the cross-links with the new links
+                // NB - We don't update the last sync'd ID as ComputeCrossLinks does because there might be issue creation
+                //      happening on the JIRA side which we haven't sync'd the other way yet
+                crossLinks.getGitHubToJira().setLinks(gitHubIssueId, created.getKey());
+                crossLinks.getJiraToGitHub().setLinks(created.getKey(), gitHubIssueId);
+                this.crossLinkOptions.saveCrossLinks();
 
-            jiraKey = created.getKey();
+                // Need the JIRA Key later for creating the remote link from JIRA back to the original GitHub Issue
+                jiraKey = created.getKey();
+            } else {
+                System.out.println("[DRY RUN] Would have created a new JIRA Issue");
+            }
 
             // TODO If there's a JIRA Key mentioned in the issue automatically add issue links?
         }
@@ -142,11 +157,15 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                                                     .title("GitHub Issue " + gitHubIssueId)
                                                     .globalId("github:" + gitHubIssueId)
                                                     .build();
-        Promise<BasicRemoteLink> createdLinkPromise =
-                remoteLinksClient.createOrUpdateRemoteLink(jiraKey, remoteLink);
-        BasicRemoteLink createdLink = createdLinkPromise.claim();
-        System.out.println(
-                "Associated GitHub Issue with JIRA Issue via Remote Link ID " + createdLink.getId());
+        if (!this.dryRun) {
+            Promise<BasicRemoteLink> createdLinkPromise =
+                    remoteLinksClient.createOrUpdateRemoteLink(jiraKey, remoteLink);
+            BasicRemoteLink createdLink = createdLinkPromise.claim();
+            System.out.println(
+                    "Associated GitHub Issue with JIRA Issue via Remote Link ID " + createdLink.getId());
+        } else {
+            System.out.println("[DRY RUN] Would have created/updated a Remote Link from JIRA to the GitHub Issue");
+        }
 
         // TODO If the GH Issue is closed apply a suitable transition to the JIRA Issue if it isn't also closed?
 

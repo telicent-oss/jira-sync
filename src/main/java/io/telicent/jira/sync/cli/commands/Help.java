@@ -10,6 +10,9 @@ import com.github.rvesse.airline.help.cli.CliGlobalUsageSummaryGenerator;
 import com.github.rvesse.airline.model.CommandGroupMetadata;
 import com.github.rvesse.airline.model.CommandMetadata;
 import com.github.rvesse.airline.model.GlobalMetadata;
+import com.github.rvesse.airline.utils.predicates.parser.CommandFinder;
+import com.github.rvesse.airline.utils.predicates.parser.GroupFinder;
+import org.apache.commons.collections4.IterableUtils;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,14 +33,29 @@ public class Help extends SyncCommand {
             CommandMetadata commandMetadata = null;
             CommandGroupMetadata groupMetadata = null;
             if (!this.arguments.isEmpty()) {
-                // TODO Determine the intended group and command
+                GroupFinder groupFinder = new GroupFinder(this.arguments.get(0));
+                groupMetadata =
+                        globalMetadata != null ? IterableUtils.find(globalMetadata.getCommandGroups(), groupFinder) :
+                        null;
+                if (groupMetadata != null) {
+                    if (this.arguments.size() > 1) {
+                        CommandFinder commandFinder = new CommandFinder(this.arguments.get(1));
+                        commandMetadata = IterableUtils.find(groupMetadata.getCommands(), commandFinder);
+                    }
+                } else {
+                    CommandFinder commandFinder = new CommandFinder(this.arguments.get(0));
+                    commandMetadata = globalMetadata != null ?
+                                      IterableUtils.find(globalMetadata.getDefaultGroupCommands(), commandFinder) :
+                                      null;
+                }
             }
 
             if (commandMetadata != null) {
                 CliCommandUsageGenerator generator = new CliCommandUsageGenerator();
                 generator.usage(globalMetadata != null ? globalMetadata.getName() : null,
                                 groupMetadata != null ? toGroupNames(groupMetadata) : null, commandMetadata.getName(),
-                                commandMetadata, globalMetadata != null ? globalMetadata.getParserConfiguration() : null);
+                                commandMetadata,
+                                globalMetadata != null ? globalMetadata.getParserConfiguration() : null);
             } else if (groupMetadata != null) {
                 CliCommandGroupUsageGenerator generator = new CliCommandGroupUsageGenerator();
                 generator.usage(this.globalMetadata, toGroups(groupMetadata).toArray(new CommandGroupMetadata[0]));

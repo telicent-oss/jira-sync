@@ -26,6 +26,7 @@
         <dependency.adf>0.35.1</dependency.adf>
         <dependency.github>1.308</dependency.github>
         <dependency.jackson>2.16.1</dependency.jackson>
+        <dependency.mockito>5.10.0</dependency.mockito>
         <dependency.okhttp>4.9.2</dependency.okhttp>
         <dependency.testng>7.6.1</dependency.testng>
     </properties>
@@ -139,6 +140,12 @@
             <artifactId>testng</artifactId>
             <version>${dependency.testng}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${dependency.mockito}</version>
         </dependency>
     </dependencies>
 

@@ -1,0 +1,17 @@
+defaultJiraIssueType: 0
+rules:
+  - type: label
+    labels:
+      - bug
+    jiraIssueType: 1
+  - type: label
+    labels:
+      - enhancement
+    jiraIssueType: 2
+  - type: title
+    searchTerms:
+      - epic
+      - feature
+    jiraIssueType: 3
+  - type: match-all
+    jiraIssueType: 4
