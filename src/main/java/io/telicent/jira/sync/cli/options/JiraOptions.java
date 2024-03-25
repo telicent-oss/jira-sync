@@ -4,14 +4,13 @@ import com.atlassian.jira.rest.client.api.JiraRestClientFactory;
 import com.atlassian.jira.rest.client.auth.BasicHttpAuthenticationHandler;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.NotBlank;
+import com.github.rvesse.airline.annotations.restrictions.RequireOnlyOne;
 import com.github.rvesse.airline.annotations.restrictions.Required;
 import io.telicent.jira.sync.client.EnhancedJiraRestClient;
 import io.telicent.jira.sync.client.EnhancedJiraRestClientFactory;
+import org.apache.commons.lang3.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.net.URI;
 
 /**
@@ -30,9 +29,14 @@ public class JiraOptions {
     private String jiraUsername;
 
     @Option(name = "--jira-token-file", title = "JiraTokenFile", description = "Supplies a file from which an API token can be read and used to authenticate to the JIRA API")
-    @Required
+    @RequireOnlyOne(tag = "jira-token")
     @com.github.rvesse.airline.annotations.restrictions.File(mustExist = true)
     private File jiraTokenFile;
+
+    @Option(name = "--jira-token-env", title = "JiraTokenEnvVar", description = "Specifies an environment variable from which the API token can be read and used to authenticate to the JIRA API")
+    @RequireOnlyOne(tag = "jira-token")
+    @NotBlank
+    private String jiraTokenEnv;
 
     @Option(name = "--jira-project-key", title = "JiraProjectKey", description = "Specifies the name of the JIRA Project Key for the JIRA project you want to sync against")
     @Required
@@ -47,15 +51,29 @@ public class JiraOptions {
         }
 
         JiraRestClientFactory factory = new EnhancedJiraRestClientFactory();
-        try (BufferedReader reader = new BufferedReader(new FileReader(this.jiraTokenFile))) {
-            this.instance = (EnhancedJiraRestClient) factory.create(URI.create(this.jiraUrl),
-                                                                    new BasicHttpAuthenticationHandler(
-                                                                            this.jiraUsername, reader.readLine()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        String jiraToken = readJiraToken();
+        this.instance = (EnhancedJiraRestClient) factory.create(URI.create(this.jiraUrl),
+                                                                new BasicHttpAuthenticationHandler(this.jiraUsername,
+                                                                                                   jiraToken));
 
         return this.instance;
+    }
+
+    private String readJiraToken() {
+        if (this.jiraTokenFile != null) {
+            try (BufferedReader reader = new BufferedReader(new FileReader(this.jiraTokenFile))) {
+                return reader.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            String token = System.getenv(this.jiraTokenEnv);
+            if (StringUtils.isBlank(token)) {
+                throw new RuntimeException(
+                        "Specified environment variable " + this.jiraTokenEnv + " is empty, no JIRA API Token available");
+            }
+            return token;
+        }
     }
 
     /**
