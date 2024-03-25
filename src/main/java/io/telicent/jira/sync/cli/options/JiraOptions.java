@@ -59,6 +59,11 @@ public class JiraOptions {
         return this.instance;
     }
 
+    /**
+     * Reads in the JIRA API token to use
+     *
+     * @return JIRA API Token
+     */
     private String readJiraToken() {
         if (this.jiraTokenFile != null) {
             try (BufferedReader reader = new BufferedReader(new FileReader(this.jiraTokenFile))) {
