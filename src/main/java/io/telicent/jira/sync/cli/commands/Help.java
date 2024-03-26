@@ -3,9 +3,13 @@ package io.telicent.jira.sync.cli.commands;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Arguments;
 import com.github.rvesse.airline.annotations.Command;
+import com.github.rvesse.airline.help.CommandGroupUsageGenerator;
+import com.github.rvesse.airline.help.CommandUsageGenerator;
+import com.github.rvesse.airline.help.GlobalUsageGenerator;
 import com.github.rvesse.airline.help.UsageHelper;
 import com.github.rvesse.airline.help.cli.CliCommandGroupUsageGenerator;
 import com.github.rvesse.airline.help.cli.CliCommandUsageGenerator;
+import com.github.rvesse.airline.help.cli.CliGlobalUsageGenerator;
 import com.github.rvesse.airline.help.cli.CliGlobalUsageSummaryGenerator;
 import com.github.rvesse.airline.model.CommandGroupMetadata;
 import com.github.rvesse.airline.model.CommandMetadata;
@@ -13,6 +17,7 @@ import com.github.rvesse.airline.model.GlobalMetadata;
 import com.github.rvesse.airline.utils.predicates.parser.CommandFinder;
 import com.github.rvesse.airline.utils.predicates.parser.GroupFinder;
 import org.apache.commons.collections4.IterableUtils;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,6 +35,8 @@ public class Help extends SyncCommand {
     @Override
     public int run() {
         try {
+            // Determine what group and/or command the user supplied as arguments (if any)
+            // This is used to show more specific help where possible
             CommandMetadata commandMetadata = null;
             CommandGroupMetadata groupMetadata = null;
             if (!this.arguments.isEmpty()) {
@@ -50,14 +57,15 @@ public class Help extends SyncCommand {
                 }
             }
 
+            // Show the most specific help possible
             if (commandMetadata != null) {
-                CliCommandUsageGenerator generator = new CliCommandUsageGenerator();
+                CommandUsageGenerator generator = newCommandHelpGenerator();
                 generator.usage(globalMetadata != null ? globalMetadata.getName() : null,
                                 groupMetadata != null ? toGroupNames(groupMetadata) : null, commandMetadata.getName(),
                                 commandMetadata,
                                 globalMetadata != null ? globalMetadata.getParserConfiguration() : null);
             } else if (groupMetadata != null) {
-                CliCommandGroupUsageGenerator generator = new CliCommandGroupUsageGenerator();
+                CommandGroupUsageGenerator<SyncCommand> generator = newGroupHelpGenerator();
                 generator.usage(this.globalMetadata, toGroups(groupMetadata).toArray(new CommandGroupMetadata[0]));
             } else {
                 showGlobalHelp();
@@ -68,9 +76,24 @@ public class Help extends SyncCommand {
         return 2;
     }
 
+    @NotNull
+    private static CliCommandUsageGenerator newCommandHelpGenerator() {
+        return new CliCommandUsageGenerator();
+    }
+
+    @NotNull
+    private static CliCommandGroupUsageGenerator<SyncCommand> newGroupHelpGenerator() {
+        return new CliCommandGroupUsageGenerator<>();
+    }
+
     private void showGlobalHelp() throws IOException {
-        CliGlobalUsageSummaryGenerator generator = new CliGlobalUsageSummaryGenerator();
+        GlobalUsageGenerator<SyncCommand> generator = newGlobalHelpGenerator();
         generator.usage(this.globalMetadata);
+    }
+
+    @NotNull
+    private static CliGlobalUsageGenerator<SyncCommand> newGlobalHelpGenerator() {
+        return new CliGlobalUsageGenerator<>();
     }
 
     private static List<CommandGroupMetadata> toGroups(CommandGroupMetadata group) {

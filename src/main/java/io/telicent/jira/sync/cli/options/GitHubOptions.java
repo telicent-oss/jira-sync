@@ -19,10 +19,6 @@ import java.io.IOException;
  */
 public class GitHubOptions {
 
-    @Option(name = "--github-token", title = "PersonalAccessToken", description = "Supplies a GitHub Personal Access Token used to authenticate to the GitHub API")
-    @MutuallyExclusiveWith(tag = "github-auth-methods")
-    private String patToken;
-
     @Option(name = "--github-token-env", title = "EnvVar", description = "Supplies the name of an environment variable from which a GitHub Personal Access Token can be obtained and used to authenticate to the GitHub API")
     @MutuallyExclusiveWith(tag = "github-auth-methods")
     private String envVar;
@@ -49,9 +45,7 @@ public class GitHubOptions {
         }
 
         GitHubConnector connector = new OkHttpGitHubConnector(new OkHttpClient());
-        if (StringUtils.isNotBlank(patToken)) {
-            this.instance = new GitHubBuilder().withOAuthToken(patToken).withConnector(connector).build();
-        } else if (StringUtils.isNotBlank(envVar)) {
+        if (StringUtils.isNotBlank(envVar)) {
             this.instance = new GitHubBuilder().withOAuthToken(System.getenv(envVar)).withConnector(connector).build();
         } else if (patFile != null) {
             System.out.println("Reading GitHub PAT Token from file " + patFile.getAbsolutePath());

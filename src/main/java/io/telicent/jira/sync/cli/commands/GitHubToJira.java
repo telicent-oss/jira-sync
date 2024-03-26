@@ -52,6 +52,9 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
     @AirlineModule
     private CrossLinkOptions crossLinkOptions = new CrossLinkOptions();
 
+    @Option(name = "--skip-existing", description = "When specified skips sync'ing issues that have already been sync'd to JIRA, this means any changes on the GitHub issue are not reflected in the JIRA but reduces the number of spurious JIRA updates")
+    private boolean skipExisting = false;
+
     @Option(name = "--dry-run", description = "When specified print what would happen without actually performing the actions i.e. preview what the results of running the command would be")
     private boolean dryRun = false;
 
@@ -103,6 +106,13 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
             IOException {
         String gitHubIssueId = this.ghRepo + "/" + issue.getNumber();
         String jiraKey = crossLinks.getGitHubToJira().getLinks().get(gitHubIssueId);
+
+        // Skip sync if it is already in JIRA and --skip-existing was set
+        if (StringUtils.isNotBlank(jiraKey) && this.skipExisting) {
+            System.out.println(
+                    "Skipping Issue #" + issue.getNumber() + " which syncs to existing JIRA Issue " + jiraKey + " as --skip-existing was set");
+            return;
+        }
 
         // Prepare the JIRA Issue content
         IssueRestClient issues = jiraRestClient.getIssueClient();
