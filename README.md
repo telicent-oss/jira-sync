@@ -266,3 +266,21 @@ created during sync operations.  Provided JIRA users are not removing those link
 information to be recovered.
 
 Therefore, you can always use the command shown in [Step 1](#step-1) to recreate a lost cross links file if necessary.
+
+## Why not use the Atlassian JIRA GitHub App?
+
+Because it doesn't offer this functionality.  It only provides for automatic linking of commits, issues and PRs that
+mention a JIRA project key, e.g. EXAMPLE-1234, to the associated JIRA issue.  There is no ability to automatically sync
+issues from the GitHub side to JIRA.
+
+## Who not use X instead?
+
+We looked at a number of pre-existing GitHub to JIRA sync tools but they were almost exclusively paid applications, or
+their feature set did not meet our fairly minimalist requirements.  We only wanted to reflect any GitHub issue that was
+created into our JIRA instance for tracking purposes, not maintain full sync between the two systems.
+
+## Can I use this in a GitHub Actions workflow?
+
+Yes, please see our [shared JIRA Sync
+workflow](https://github.com/telicent-oss/shared-workflows/blob/main/.github/workflows/jira-sync.yml) for an example of 
+one possible way to do that.

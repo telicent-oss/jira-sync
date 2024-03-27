@@ -1,6 +1,7 @@
 package io.telicent.jira.sync.cli.commands;
 
 import com.atlassian.jira.issue.link.RemoteIssueLink;
+import com.atlassian.jira.rest.client.api.RestClientException;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.Required;
@@ -36,6 +37,9 @@ public class RemoteLinks extends JiraSyncCommand{
             }
 
             return 0;
+        } catch (RestClientException e) {
+            this.reportJiraRestError(e);
+            return 1;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

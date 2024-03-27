@@ -16,6 +16,7 @@ jobs:
       jira-url: https://telicent.atlassian.net
       jira-project: TELPLAT
       issue-mapping-file: .github/jira-mapping-rules.yml
+      extra-sync-options: "--skip-existing --dry-run"
     secrets: inherit
 
   
