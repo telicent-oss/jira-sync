@@ -4,6 +4,7 @@ import com.atlassian.adf.jackson2.AdfJackson2;
 import com.atlassian.adf.markdown.MarkdownParser;
 import com.atlassian.adf.model.node.Doc;
 import com.atlassian.jira.rest.client.api.IssueRestClient;
+import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.BasicIssue;
 import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
 import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
@@ -94,6 +95,9 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                 }
                 return 0;
             }
+        } catch (RestClientException e) {
+            this.reportJiraRestError(e);
+            return 1;
         } catch (GHFileNotFoundException e) {
             throw new RuntimeException(
                     "GitHub Repository " + this.ghRepo + " does not exist, or your provided GitHub Credentials do not permit access to it");

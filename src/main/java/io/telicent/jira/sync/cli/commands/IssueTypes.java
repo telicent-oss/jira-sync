@@ -3,6 +3,7 @@ package io.telicent.jira.sync.cli.commands;
 import com.atlassian.jira.rest.client.api.GetCreateIssueMetadataOptionsBuilder;
 import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
+import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.CimIssueType;
 import com.atlassian.jira.rest.client.api.domain.CimProject;
 import com.github.rvesse.airline.annotations.Command;
@@ -36,6 +37,9 @@ public class IssueTypes extends JiraSyncCommand {
             }
 
             return 0;
+        } catch (RestClientException e) {
+            this.reportJiraRestError(e);
+            return 1;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
