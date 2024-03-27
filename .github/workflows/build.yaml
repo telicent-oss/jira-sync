@@ -10,5 +10,7 @@ jobs:
   build:
     name: Maven Build
     uses: telicent-oss/shared-workflows/.github/workflows/maven.yml@main
+    with:
+      PUBLISH_SNAPSHOTS: false
     secrets: inherit
 
