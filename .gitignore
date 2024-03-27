@@ -8,6 +8,9 @@ release.properties
 .idea/
 *.iml
 
+# VSCode
+.vscode/
+
 # Test Files
 test.yaml
 cross-links.yaml
