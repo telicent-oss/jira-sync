@@ -1,0 +1,12 @@
+on:
+  push:
+    branches:
+    tags:
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Maven Build
+    uses: telicent-oss/shared-workflows/.github/workflows/maven.yml@maven-workflow
+    secrets: inherit
+
