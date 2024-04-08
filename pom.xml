@@ -16,18 +16,18 @@
     <properties>
         <jdk.version>17</jdk.version>
 
-        <plugin.assembly>3.4.2</plugin.assembly>
-        <plugin.javadoc>3.4.0</plugin.javadoc>
-        <plugin.shade>3.3.0</plugin.shade>
-        <plugin.surefire>3.0.0-M7</plugin.surefire>
+        <plugin.assembly>3.7.1</plugin.assembly>
+        <plugin.javadoc>3.6.3</plugin.javadoc>
+        <plugin.shade>3.5.2</plugin.shade>
+        <plugin.surefire>3.2.5</plugin.surefire>
 
         <dependency.airline>3.0.0</dependency.airline>
-        <dependency.adf>0.35.1</dependency.adf>
-        <dependency.github>1.308</dependency.github>
-        <dependency.jackson>2.16.1</dependency.jackson>
-        <dependency.mockito>5.10.0</dependency.mockito>
-        <dependency.okhttp>4.9.2</dependency.okhttp>
-        <dependency.testng>7.6.1</dependency.testng>
+        <dependency.adf>0.36.0</dependency.adf>
+        <dependency.github>1.321</dependency.github>
+        <dependency.jackson>2.17.0</dependency.jackson>
+        <dependency.mockito>5.11.0</dependency.mockito>
+        <dependency.okhttp>4.12.0</dependency.okhttp>
+        <dependency.testng>7.9.0</dependency.testng>
     </properties>
 
     <dependencies>
@@ -40,13 +40,13 @@
         <dependency>
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
-            <version>1.5.0</version>
+            <version>1.5.3</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-to-slf4j</artifactId>
-            <version>2.17.2</version>
+            <version>2.23.1</version>
         </dependency>
 
         <dependency>
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.30</version>
+            <version>1.18.32</version>
             <scope>provided</scope>
         </dependency>
 
@@ -113,7 +113,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.0.0-jre</version>
+            <version>33.1.0-jre</version>
         </dependency>
 
         <!-- Atlassian Document Format -->
@@ -155,7 +155,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.10.1</version>
+                <version>3.13.0</version>
                 <configuration>
                     <source>${jdk.version}</source>
                     <target>${jdk.version}</target>
