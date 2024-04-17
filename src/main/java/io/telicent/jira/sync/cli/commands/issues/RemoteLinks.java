@@ -1,4 +1,4 @@
-package io.telicent.jira.sync.cli.commands;
+package io.telicent.jira.sync.cli.commands.issues;
 
 import com.atlassian.jira.issue.link.RemoteIssueLink;
 import com.atlassian.jira.rest.client.api.RestClientException;
@@ -6,13 +6,14 @@ import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
 import com.github.rvesse.airline.annotations.restrictions.Required;
 import io.atlassian.util.concurrent.Promise;
+import io.telicent.jira.sync.cli.commands.JiraProjectSyncCommand;
 import io.telicent.jira.sync.client.AsynchronousRemoteLinksClient;
 import io.telicent.jira.sync.client.EnhancedJiraRestClient;
 
 import java.io.IOException;
 
 @Command(name = "remote-links", description = "Retrieves the remote links associated with a JIRA Issue")
-public class RemoteLinks extends JiraSyncCommand{
+public class RemoteLinks extends JiraProjectSyncCommand {
 
     @Option(name = "--jira-issue", title = "JiraIssue", description = "Specifies the key of a JIRA Issue")
     @Required

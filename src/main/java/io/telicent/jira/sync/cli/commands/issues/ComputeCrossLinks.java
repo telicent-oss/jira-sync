@@ -1,4 +1,4 @@
-package io.telicent.jira.sync.cli.commands;
+package io.telicent.jira.sync.cli.commands.issues;
 
 import com.atlassian.jira.issue.link.RemoteIssueLink;
 import com.atlassian.jira.rest.client.api.RestClientException;
@@ -8,6 +8,7 @@ import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import io.atlassian.util.concurrent.Promise;
+import io.telicent.jira.sync.cli.commands.JiraProjectSyncCommand;
 import io.telicent.jira.sync.cli.options.CrossLinkOptions;
 import io.telicent.jira.sync.client.AsynchronousRemoteLinksClient;
 import io.telicent.jira.sync.client.EnhancedJiraRestClient;
@@ -18,7 +19,7 @@ import org.apache.commons.lang3.StringUtils;
 import java.io.IOException;
 
 @Command(name = "cross-links", description = "Command that calculates the cross-links between GitHub and JIRA")
-public class ComputeCrossLinks extends JiraSyncCommand {
+public class ComputeCrossLinks extends JiraProjectSyncCommand {
 
     public static final String GITHUB_LINK_ID_PREFIX = "github:";
     @AirlineModule

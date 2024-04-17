@@ -1,4 +1,4 @@
-package io.telicent.jira.sync.cli.commands;
+package io.telicent.jira.sync.cli.commands.issues;
 
 import com.atlassian.jira.rest.client.api.GetCreateIssueMetadataOptionsBuilder;
 import com.atlassian.jira.rest.client.api.IssueRestClient;
@@ -8,11 +8,12 @@ import com.atlassian.jira.rest.client.api.domain.CimIssueType;
 import com.atlassian.jira.rest.client.api.domain.CimProject;
 import com.github.rvesse.airline.annotations.Command;
 import io.atlassian.util.concurrent.Promise;
+import io.telicent.jira.sync.cli.commands.JiraProjectSyncCommand;
 
 import java.io.IOException;
 
 @Command(name = "jira-types", description = "Finds the available JIRA Issue Types for the specified JIRA Project")
-public class IssueTypes extends JiraSyncCommand {
+public class IssueTypes extends JiraProjectSyncCommand {
     @Override
     public int run() {
         try (JiraRestClient jira = this.jiraOptions.connect()) {

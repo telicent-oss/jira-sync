@@ -8,6 +8,7 @@ import com.github.rvesse.airline.parser.ParseResult;
 import com.github.rvesse.airline.parser.errors.ParseException;
 import com.github.rvesse.airline.parser.errors.handlers.CollectAll;
 import io.telicent.jira.sync.cli.commands.*;
+import io.telicent.jira.sync.cli.commands.issues.*;
 
 //@formatter:off
 @Cli(name = "jira-sync",
@@ -20,11 +21,14 @@ import io.telicent.jira.sync.cli.commands.*;
         @Group(
             name = "issues",
             commands = {
+                Comments.class,
                 ComputeCrossLinks.class,
+                Fields.class,
                 IssueTypes.class,
                 GitHubToJira.class,
                 RemoteLinks.class
-            }
+            },
+            defaultCommand = Help.class
         )
      },
      parserConfiguration = @Parser(errorHandler = CollectAll.class))

@@ -11,6 +11,7 @@ public class EnhancedJiraRestClient extends AsynchronousJiraRestClient {
 
     private final AsynchronousRemoteLinksClient remoteLinksClient;
     private final EnhancedIssuesRestClient enhancedIssuesClient;
+    private final AsynchronousIssueCommentsClient commentsClient;
 
     public EnhancedJiraRestClient(URI serverUri,
                                   DisposableHttpClient httpClient) {
@@ -19,12 +20,29 @@ public class EnhancedJiraRestClient extends AsynchronousJiraRestClient {
         URI baseUri = UriBuilder.fromUri(serverUri).path("/rest/api/latest").build();
         this.remoteLinksClient = new AsynchronousRemoteLinksClient(baseUri, httpClient);
 
+        // For these API Clients want to explicitly use the v3 API
         URI v3Uri = UriBuilder.fromUri(serverUri).path("/rest/api/3").build();
-        this.enhancedIssuesClient = new EnhancedIssuesRestClient(v3Uri, httpClient, this.getSessionClient(), this.getMetadataClient());
+        this.enhancedIssuesClient =
+                new EnhancedIssuesRestClient(v3Uri, httpClient, this.getSessionClient(), this.getMetadataClient());
+        this.commentsClient = new AsynchronousIssueCommentsClient(v3Uri, httpClient);
     }
 
+    /**
+     * Gets an API Client for manipulating issue remote links
+     *
+     * @return Issue Remote Links API Client
+     */
     public AsynchronousRemoteLinksClient getRemoteLinksClient() {
         return this.remoteLinksClient;
+    }
+
+    /**
+     * Gets an API Client for manipulating issue comments
+     *
+     * @return Issue Comments API Client
+     */
+    public AsynchronousIssueCommentsClient getCommentsClient() {
+        return this.commentsClient;
     }
 
     @Override
