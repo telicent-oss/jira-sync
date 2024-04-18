@@ -32,12 +32,13 @@ import org.kohsuke.github.GHFileNotFoundException;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHIssueComment;
 import org.kohsuke.github.GHIssueState;
+import org.kohsuke.github.GHIssueStateReason;
 import org.kohsuke.github.GHRepository;
+import org.kohsuke.github.GHUser;
 import org.kohsuke.github.GitHub;
 
 import java.io.IOException;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Command(name = "to-jira", description = "Command for synchronising GitHub Issues to JIRA")
 public class GitHubToJira extends JiraGitHubSyncCommand {
@@ -60,6 +61,12 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
 
     @Option(name = "--include-comments", description = "When specified also sync's any GitHub issue comments across into JIRA issue comments.")
     private boolean includeComments = false;
+
+    @Option(name = "--include-closed", description = "When specified also sync's any GitHub issues that are already closed on the GitHub side.  Note that the sync'd JIRA issue will not be closed so this should be used with caution.")
+    private boolean includeClosed = false;
+
+    @Option(name = "--close-after-sync", description = "When specified any GitHub issue that is sync'd will be closed on the GitHub side.")
+    private boolean closeAfterSync = false;
 
     @Option(name = "--skip-existing", description = "When specified skips sync'ing issues that have already been sync'd to JIRA, this means any changes on the GitHub issue are not reflected in the JIRA but reduces the number of spurious JIRA updates.")
     private boolean skipExisting = false;
@@ -92,7 +99,10 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                     }
                 } else {
                     System.out.println("Syncing GitHub Issues from repository " + this.ghRepo);
-                    for (GHIssue issue : repository.getIssues(GHIssueState.ALL)) {
+                    List<GHIssue> issues = new ArrayList<>(
+                            repository.getIssues(this.includeClosed ? GHIssueState.ALL : GHIssueState.OPEN));
+                    Collections.sort(issues, Comparator.comparingInt(GHIssue::getNumber));
+                    for (GHIssue issue : issues) {
                         if (issue.isPullRequest()) {
                             System.out.println("Skipping PR #" + issue.getNumber());
                             continue;
@@ -116,6 +126,12 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
 
     private void syncOneIssue(CrossLinks crossLinks, EnhancedJiraRestClient jiraRestClient, GHIssue issue) throws
             IOException {
+        // Skip sync for closed issues unless --include-closed was set
+        if (issue.getState() == GHIssueState.CLOSED && !this.includeClosed) {
+            System.out.println("Skipping Issue #" + issue.getNumber() + " as it is already closed");
+            return;
+        }
+
         String gitHubIssueId = this.ghRepo + "/" + issue.getNumber();
         String jiraKey = crossLinks.getGitHubToJira().getLinks().get(gitHubIssueId);
 
@@ -191,6 +207,17 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
 
         // Sync Issue Comments if enabled
         this.syncIssueComments(crossLinks, jiraRestClient, issue, jiraKey);
+
+        // Close original GitHub issue if configured
+        if (this.closeAfterSync) {
+            if (!this.dryRun) {
+                issue.comment("This issue was synced to JIRA as " + jiraKey + " and will be tracked and actioned there in future");
+                issue.close(GHIssueStateReason.COMPLETED);
+                System.out.println("Closed GitHub Issue #" + issue.getNumber());
+            } else {
+                System.out.println("[DRY RUN] Would have closed GitHub Issue #" + issue.getNumber());
+            }
+        }
     }
 
     private void updateCrossLinks(CrossLinks crossLinks, String gitHubId, String jiraId) throws IOException {
@@ -202,8 +229,7 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
     }
 
     private void syncIssueComments(CrossLinks crossLinks, EnhancedJiraRestClient jira, GHIssue issue,
-                                   String jiraIssueKey) throws
-            IOException {
+                                   String jiraIssueKey) throws IOException {
         if (!this.includeComments) {
             return;
         }
@@ -221,9 +247,24 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                 continue;
             }
 
-            CommentInput commentInput = new CommentInput(translateMarkdownToAdfDocument(ghComment.getBody()),
-                                                         List.of(new CommentProperty("io.telicent.jira-sync",
-                                                                                     gitHubCommentId)), null);
+            StringBuilder commentPreamble = new StringBuilder();
+            if (ghComment.getUser() != null) {
+                commentPreamble.append("GitHub User [")
+                               .append(getUsername(ghComment.getUser()))
+                               .append("](")
+                               .append(ghComment.getUser().getHtmlUrl())
+                               .append(") commented on ")
+                               .append(ghComment.getCreatedAt().toInstant().toString());
+                if (ghComment.getUpdatedAt() != null && ghComment.getUpdatedAt().after(ghComment.getCreatedAt())) {
+                    commentPreamble.append(" and was last updated on ")
+                                   .append(ghComment.getUpdatedAt().toInstant().toString());
+                }
+                commentPreamble.append("\n\n");
+            }
+
+            CommentInput commentInput =
+                    new CommentInput(translateMarkdownToAdfDocument(commentPreamble + ghComment.getBody()),
+                                     List.of(new CommentProperty("io.telicent.jira-sync", gitHubCommentId)), null);
             if (!this.dryRun) {
                 Promise<Comment> commentCreation = StringUtils.isNotBlank(jiraCommentId) ?
                                                    commentsClient.updateComment(jiraIssueKey, jiraCommentId,
@@ -238,7 +279,18 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                         "[DRY RUN] Would have created/updated an Issue Comment on JIRA Issue " + jiraIssueKey + " for GitHub Comment " + ghComment.getId());
             }
         }
-        System.out.println("All comments for GitHub Issue " + issue.getNumber() + " synced to JIRA Issue " + jiraIssueKey);
+        System.out.println(
+                "All comments for GitHub Issue " + issue.getNumber() + " synced to JIRA Issue " + jiraIssueKey);
+    }
+
+    private String getUsername(GHUser user) throws IOException {
+        if (user.getName() != null) {
+            return user.getName();
+        } else if (user.getLogin() != null) {
+            return user.getLogin();
+        } else {
+            return Long.toString(user.getId());
+        }
     }
 
     private static Object translateMarkdownToAdf(GHIssue issue) throws JsonProcessingException {
