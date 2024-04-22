@@ -29,6 +29,7 @@ public class CommentGenerator implements JsonGenerator<Comment> {
             for (CommentProperty p : comment.getProperties()) {
                 properties.put(this.commentPropertyGenerator.generate(p));
             }
+            json.put("properties", properties);
         }
 
         return json;
