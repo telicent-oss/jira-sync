@@ -112,7 +112,7 @@ issues where appropriate and only create new JIRA issues where one doesn't yet e
 As noted if you keep this file around somewhere then there is no need to run this step every time, you can just supply
 the file to [Step 3](#step-3) and it automatically keeps it up to date as it sync's new issues.
 
-### Step 2
+### Step 2
 
 In order for the tool to know what type of JIRA issues to create you need to establish some mapping rules that tell it
 how a GitHub issue should be mapped into a JIRA issue.  The first stage of this is to run the `jira-sync issues
@@ -228,16 +228,55 @@ issue in question e.g. `--github-issue-id 123` would sync only Issue 123 from yo
 
 # FAQs
 
+## Which GitHub issues get sync'd to JIRA?
+
+It depends on the option provided, as shown in [Step 3](#step-3).  The default behaviour is to sync all open issues in
+the provided repository.
+
+You can specify `--include-closed` to force the sync of closed issues as well.
+
+Alternatively you can sync a single issue by supplying the `--github-issue-id` option.  If this issue is already closed then you will need to use `--include-closed` as well.
+
+## Can I check what the tool will do ahead of time?
+
+Yes, the `to-jira` command includes a `--dry-run` option.  When specified this will simply print what would have
+occurred without actually doing it.  Note that some read interactions with GitHub and JIRA still occur in this mode but no write actions happen.
+
+Note that in this mode the JIRA Keys assigned to issues will not be known so you will see example values like `YOURPROJECT-?` instead of `YOURPROJECT-123`.
+
 ## What gets sync'd to JIRA?
 
-Currently the title and the content of a GitHub issue gets sync'd across to JIRA.  The title will populate the Summary
-field of the issue, and the content the description field.  The tool uses some of Atlassian's newer tooling to attempt
-to convert Markdown in the GitHub content into richly formatted text in JIRA, **but** not all Markdown syntax translates
-so you **MAY** see some weird formatting.
+Currently the title, content and labels of a GitHub issue gets sync'd across to JIRA.  The title will populate the
+Summary field of the issue, and the content the description field.  Since JIRA labels are simple strings the GitHub
+label names are used to populate the list of JIRA labels.
 
-The assignee/reporter of an issue is not sync'd, nor are any GitHub labels, GitHub comments etc.  Also if a GitHub issue
-transitions, i.e. closes, the corresponding JIRA does not transition currently.  All these things **MAY** be supported
-in the future subject to demand.
+Optionally, if the `--include-comments` option is specified, then the content of comments are also sync'd across as JIRA
+comments on the corresponding JIRA issue.
+
+Optionally, if the `--jira-repository-field` option is supplied with a JIRA Field ID then the corresponding JIRA issue
+field will be populated with a reference to the GitHub repository e.g. `telicent-oss/jira-sync`.
+
+Since the [user](#whose-jiragithub-credentials-should-i-used) running the sync tool is likely not the author of the
+issues and comments being sync'd across all content will be prefaced with the following:
+
+> GitHub User [Rob Vesse](https://github.com/rvesse) [filed an issue](https://github.com/telicent-oss/jira-sync/issues/1)
+> on 2024-02-26T11:23:39Z and was last updated on 2024-04-22T09:18:50Z
+
+This allows seeing who actually created an issue/comment, and easily discovering the original author and content if
+needed.
+
+The tool uses some of Atlassian's newer libraries to automatically convert Markdown in the GitHub content into richly
+formatted text in JIRA, **but** not all Markdown syntax translates so you **MAY** see some weird formatting on some
+content.
+
+# What isn't sync'd to JIRA?
+
+The assignee/reporter of an issue is not sync'd, primarily because a GitHub repository may have a very different set of
+users to your JIRA instance.
+
+Also if a GitHub issue transitions, i.e. closes, the corresponding JIRA does not transition currently.  
+
+These things **MAY** be supported in the future subject to demand.
 
 ## Are issues always updated?
 
@@ -257,13 +296,14 @@ reporter field.
 If you are only running this tool locally then store it locally.
 
 If you are automating the running of this tool, e.g. on CI/CD infrastructure, then store it somewhere persistent and
-read and write it before and after the build.
+read and write it before and after the build.  You can always [recompute](#what-if-i-lose-my-cross-links-file) it as
+needed based on the metadata
 
 ## What if I lose my cross links file?
 
-The tool takes advantage of internal metadata for JIRA remote links to allow it to detect the links it has previously
-created during sync operations.  Provided JIRA users are not removing those links or modifying them this allows the
-information to be recovered.
+The tool takes advantage of internal metadata for JIRA remote links and comments to allow it to detect the JIRA content
+it has previously created during sync operations.  Provided JIRA users are not removing this metadata or modifying them
+this information can be recovered.
 
 Therefore, you can always use the command shown in [Step 1](#step-1) to recreate a lost cross links file if necessary.
 
