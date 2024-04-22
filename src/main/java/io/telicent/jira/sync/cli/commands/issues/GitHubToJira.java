@@ -10,6 +10,7 @@ import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import com.github.rvesse.airline.annotations.Option;
+import com.github.rvesse.airline.annotations.restrictions.NotBlank;
 import com.github.rvesse.airline.annotations.restrictions.Required;
 import io.atlassian.util.concurrent.Promise;
 import io.telicent.jira.sync.cli.commands.JiraGitHubSyncCommand;
@@ -43,6 +44,10 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
     @Option(name = "--github-repository", title = "GitHubRepository", description = "Specifies the GitHub Repository whose issue you want to sync to JIRA")
     @Required
     private String ghRepo;
+
+    @Option(name = "--jira-repository-field", title = "JiraCustomFieldId", description = "Specifies the ID of a custom JIRA field that can be used to store the name of the GitHub repository from which an issue was sync'd.")
+    @NotBlank
+    private String jiraRepositoryField;
 
     @AirlineModule
     private JiraIssueTypeMappingOptions jiraIssueTypeMappingOptions = new JiraIssueTypeMappingOptions();
@@ -143,17 +148,26 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
         StringBuilder issuePreamble =
                 GitHubUtils.buildPreamble(issue.getUser(), issue.getCreatedAt(), issue.getUpdatedAt(), "filed an issue",
                                           issue.getHtmlUrl().toString());
-        IssueInput input = new IssueInputBuilder().setIssueTypeId(jiraIssueType)
-                                                  .setProjectKey(this.jiraOptions.getProjectKey())
-                                                  .setFieldInput(new FieldInput(IssueFieldId.DESCRIPTION_FIELD,
-                                                                                JiraUtils.translateMarkdownToAdf(issuePreamble,
-                                                                                                                 issue)))
-                                                  .setSummary(issue.getTitle())
-                                                  // TODO Copy assignee where relevant
-                                                  .setFieldInput(new FieldInput(IssueFieldId.LABELS_FIELD,
-                                                                                GitHubUtils.translateLabels(issue)))
-                                                  .build();
+        IssueInputBuilder issueBuilder = new IssueInputBuilder().setIssueTypeId(jiraIssueType)
+                                                                .setProjectKey(this.jiraOptions.getProjectKey())
+                                                                .setFieldInput(
+                                                                        new FieldInput(IssueFieldId.DESCRIPTION_FIELD,
+                                                                                       JiraUtils.translateMarkdownToAdf(
+                                                                                               issuePreamble,
+                                                                                               issue)))
+                                                                .setSummary(issue.getTitle())
+                                                                .setFieldInput(new FieldInput(IssueFieldId.LABELS_FIELD,
+                                                                                              GitHubUtils.translateLabels(
+                                                                                                      issue)));
+        // TODO Copy assignee where relevant
 
+        if (StringUtils.isNotBlank(this.jiraRepositoryField)) {
+            issueBuilder = issueBuilder.setFieldInput(
+                    new FieldInput(this.jiraRepositoryField, this.ghRepo));
+        }
+
+
+        IssueInput input = issueBuilder.build();
         if (StringUtils.isNotBlank(jiraKey)) {
             System.out.println("GitHub Issue " + gitHubIssueId + " syncs to existing JIRA Issue " + jiraKey);
             if (!this.dryRun) {
@@ -254,15 +268,18 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
         }
 
         StringBuilder commentPreamble =
-                GitHubUtils.buildPreamble(ghComment.getUser(), ghComment.getCreatedAt(), ghComment.getUpdatedAt(), "commented",
+                GitHubUtils.buildPreamble(ghComment.getUser(), ghComment.getCreatedAt(), ghComment.getUpdatedAt(),
+                                          "commented",
                                           ghComment.getHtmlUrl().toString());
         CommentInput commentInput =
                 new CommentInput(JiraUtils.translateMarkdownToAdfDocument(commentPreamble + ghComment.getBody()),
                                  List.of(new CommentProperty(JiraUtils.COMMENT_PROPERTY_KEY,
-                                                             Map.of(JiraUtils.GITHUB_COMMENT_ID_PROPERTY, gitHubCommentId))), null);
+                                                             Map.of(JiraUtils.GITHUB_COMMENT_ID_PROPERTY,
+                                                                    gitHubCommentId))), null);
         if (!this.dryRun) {
             Promise<Comment> commentCreation = StringUtils.isNotBlank(jiraCommentId) ?
-                                               commentsClient.updateComment(jiraIssueKey, jiraCommentId,
+                                               commentsClient.updateComment(jiraIssueKey, jiraCommentId.substring(
+                                                                                    jiraCommentId.lastIndexOf('/') + 1),
                                                                             commentInput) :
                                                commentsClient.addComment(jiraIssueKey, commentInput);
             Comment created = commentCreation.claim();
