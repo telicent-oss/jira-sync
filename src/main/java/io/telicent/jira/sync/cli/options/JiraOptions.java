@@ -38,11 +38,6 @@ public class JiraOptions {
     @NotBlank
     private String jiraTokenEnv;
 
-    @Option(name = "--jira-project-key", title = "JiraProjectKey", description = "Specifies the name of the JIRA Project Key for the JIRA project you want to sync against")
-    @Required
-    @NotBlank
-    private String jiraProjectKey;
-
     private EnhancedJiraRestClient instance = null;
 
     public EnhancedJiraRestClient connect() {
@@ -81,12 +76,4 @@ public class JiraOptions {
         }
     }
 
-    /**
-     * Gets the JIRA Project Key for the project the user wants to sync against
-     *
-     * @return JIRA Project Key
-     */
-    public String getProjectKey() {
-        return this.jiraProjectKey;
-    }
 }

@@ -1,4 +1,4 @@
-package io.telicent.jira.sync.cli.commands;
+package io.telicent.jira.sync.cli.commands.issues;
 
 import com.atlassian.jira.issue.link.RemoteIssueLink;
 import com.atlassian.jira.rest.client.api.RestClientException;
@@ -8,17 +8,24 @@ import com.atlassian.jira.rest.client.api.domain.SearchResult;
 import com.github.rvesse.airline.annotations.AirlineModule;
 import com.github.rvesse.airline.annotations.Command;
 import io.atlassian.util.concurrent.Promise;
+import io.telicent.jira.sync.cli.commands.JiraProjectSyncCommand;
 import io.telicent.jira.sync.cli.options.CrossLinkOptions;
+import io.telicent.jira.sync.client.AsynchronousIssueCommentsClient;
 import io.telicent.jira.sync.client.AsynchronousRemoteLinksClient;
 import io.telicent.jira.sync.client.EnhancedJiraRestClient;
+import io.telicent.jira.sync.client.model.Comment;
+import io.telicent.jira.sync.client.model.CommentProperty;
 import io.telicent.jira.sync.client.model.CrossLinkedProject;
 import io.telicent.jira.sync.client.model.CrossLinks;
+import io.telicent.jira.sync.utils.JiraUtils;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
+import java.util.Map;
 
 @Command(name = "cross-links", description = "Command that calculates the cross-links between GitHub and JIRA")
-public class ComputeCrossLinks extends JiraSyncCommand {
+public class ComputeCrossLinks extends JiraProjectSyncCommand {
 
     public static final String GITHUB_LINK_ID_PREFIX = "github:";
     @AirlineModule
@@ -48,6 +55,7 @@ public class ComputeCrossLinks extends JiraSyncCommand {
                 SearchResult searchResults = searchPromise.claim();
 
                 AsynchronousRemoteLinksClient remoteLinksClient = jiraRestClient.getRemoteLinksClient();
+                AsynchronousIssueCommentsClient commentsClient = jiraRestClient.getCommentsClient();
                 for (Issue issue : searchResults.getIssues()) {
                     Promise<Iterable<RemoteIssueLink>> remoteLinksPromise =
                             remoteLinksClient.getRemoteLinks(issue.getKey());
@@ -61,6 +69,23 @@ public class ComputeCrossLinks extends JiraSyncCommand {
                         }
                     }
                     jiraToGitHub.getLastSyncedIds().put(this.jiraOptions.getProjectKey(), issue.getKey());
+
+                    Promise<Iterable<Comment>> commentsPromise = commentsClient.getComments(issue.getKey());
+                    Iterable<Comment> comments = commentsPromise.claim();
+                    Promise<Iterable<Comment>> commentsByIdPromise = commentsClient.getCommentsByIds(
+                            IterableUtils.toList(comments).stream().map(c -> c.getId().toString()).toList());
+                    comments = commentsByIdPromise.claim();
+                    for (Comment comment : comments) {
+                        CommentProperty jiraSyncProperty = comment.getProperty(JiraUtils.COMMENT_PROPERTY_KEY);
+                        if (jiraSyncProperty != null) {
+                            String gitHubCommentId = ((Map<String, String>) jiraSyncProperty.value()).get(
+                                    JiraUtils.GITHUB_COMMENT_ID_PROPERTY);
+                            String jiraCommentId = JiraUtils.getJiraCommentId(issue.getKey(), comment);
+                            jiraToGitHub.setLinks(jiraCommentId, gitHubCommentId);
+                            githubToJira.setLinks(gitHubCommentId, jiraCommentId);
+                            System.out.println("Discovered cross link " + jiraCommentId + " -> " + gitHubCommentId);
+                        }
+                    }
 
                     processed++;
                 }
