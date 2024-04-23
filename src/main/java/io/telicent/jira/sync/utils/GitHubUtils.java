@@ -1,6 +1,5 @@
 package io.telicent.jira.sync.utils;
 
-import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHUser;
@@ -18,10 +17,9 @@ public class GitHubUtils {
      * @param createdAt When the issue/comment was created
      * @param updatedAt When the issue/comment was last updated
      * @return Preamble
-     * @throws IOException
      */
     public static StringBuilder buildPreamble(GHUser user, Date createdAt, Date updatedAt, String action,
-                                              String originalUrl) throws IOException {
+                                              String originalUrl) {
         StringBuilder commentPreamble = new StringBuilder();
         if (user != null) {
             commentPreamble.append("GitHub User [")
@@ -42,16 +40,34 @@ public class GitHubUtils {
         return commentPreamble;
     }
 
-    private static String getUsername(GHUser user) throws IOException {
-        if (user.getName() != null) {
-            return user.getName();
-        } else if (user.getLogin() != null) {
+    /**
+     * Gets the most human-readable username available for a user
+     *
+     * @param user GitHub User
+     * @return Human-readable username
+     */
+    private static String getUsername(GHUser user)  {
+        try {
+            if (user.getName() != null) {
+                return user.getName();
+            }
+        } catch (IOException e) {
+            // Ignore and fallback to other options
+        }
+
+        if (user.getLogin() != null) {
             return user.getLogin();
         } else {
             return Long.toString(user.getId());
         }
     }
 
+    /**
+     * Translates GitHub Issue labels into JIRA labels (which are simple strings)
+     *
+     * @param issue GitHub Issue
+     * @return JIRA Labels
+     */
     public static Object translateLabels(GHIssue issue) {
         List<String> labels = new ArrayList<>();
         for (GHLabel label : issue.getLabels()) {
@@ -60,7 +76,14 @@ public class GitHubUtils {
         return labels;
     }
 
-    public static @NotNull String buildCloseComment(String jiraBaseUrl, String jiraIssueKey) {
+    /**
+     * Builds a comment message that links to the JIRA issue created for a GitHub issue
+     *
+     * @param jiraBaseUrl  JIRA Base URL
+     * @param jiraIssueKey JIRA Issue Key
+     * @return Comment message as Markdown
+     */
+    public static String buildCloseComment(String jiraBaseUrl, String jiraIssueKey) {
         StringBuilder builder = new StringBuilder();
         builder.append("This issue was synced to JIRA as [")
                .append(jiraIssueKey)
