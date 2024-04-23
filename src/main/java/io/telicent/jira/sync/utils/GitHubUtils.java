@@ -1,5 +1,6 @@
 package io.telicent.jira.sync.utils;
 
+import org.jetbrains.annotations.NotNull;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHUser;
@@ -57,5 +58,17 @@ public class GitHubUtils {
             labels.add(label.getName());
         }
         return labels;
+    }
+
+    public static @NotNull String buildCloseComment(String jiraBaseUrl, String jiraIssueKey) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("This issue was synced to JIRA as [")
+               .append(jiraIssueKey)
+               .append("](")
+               .append(jiraBaseUrl)
+               .append("/browse/")
+               .append(jiraIssueKey)
+               .append(") and will be tracked and actioned there in future");
+        return builder.toString();
     }
 }

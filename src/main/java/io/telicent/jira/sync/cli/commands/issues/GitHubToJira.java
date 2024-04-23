@@ -222,7 +222,7 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
         if (this.closeAfterSync && issue.getState() == GHIssueState.OPEN) {
             if (!this.dryRun) {
                 GHIssueComment comment = issue.comment(
-                        "This issue was synced to JIRA as " + jiraKey + " and will be tracked and actioned there in future");
+                        GitHubUtils.buildCloseComment(this.jiraOptions.getBaseUrl(), jiraKey));
                 syncOneComment(crossLinks, issue, jiraKey, comment, jiraRestClient.getCommentsClient());
                 issue.close(GHIssueStateReason.COMPLETED);
                 System.out.println("Closed GitHub Issue #" + issue.getNumber());
