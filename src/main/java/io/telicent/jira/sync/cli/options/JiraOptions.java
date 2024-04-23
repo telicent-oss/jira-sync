@@ -76,4 +76,12 @@ public class JiraOptions {
         }
     }
 
+    /**
+     * Gets the Base URL of the JIRA instance
+     *
+     * @return Base URL
+     */
+    public String getBaseUrl() {
+        return this.jiraUrl;
+    }
 }
