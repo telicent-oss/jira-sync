@@ -67,8 +67,11 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
     @Option(name = "--skip-existing", description = "When specified skips sync'ing issues that have already been sync'd to JIRA, this means any changes on the GitHub issue are not reflected in the JIRA but reduces the number of spurious JIRA updates.")
     private boolean skipExisting = false;
 
-    @Option(name = "--dry-run", description = "When specified print what would happen without actually performing the actions i.e. preview what the results of running the command would be")
+    @Option(name = "--dry-run", description = "When specified print what would happen without actually performing the actions i.e. preview what the results of running the command would be.")
     private boolean dryRun = false;
+
+    @Option(name = "--extra-labels", description = "Specifies extra labels that are added to the JIRA issue in addition to the GitHub labels already present on the GitHub issues.")
+    private List<String> extraLabels = new ArrayList<>();
 
     @Override
     public int run() {
@@ -158,7 +161,7 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                                                                 .setSummary(issue.getTitle())
                                                                 .setFieldInput(new FieldInput(IssueFieldId.LABELS_FIELD,
                                                                                               GitHubUtils.translateLabels(
-                                                                                                      issue)));
+                                                                                                      issue, this.extraLabels)));
         // TODO Copy assignee where relevant
 
         if (StringUtils.isNotBlank(this.jiraRepositoryField)) {

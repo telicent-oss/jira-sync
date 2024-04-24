@@ -1,5 +1,6 @@
 package io.telicent.jira.sync.utils;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHUser;
@@ -66,12 +67,16 @@ public class GitHubUtils {
      * Translates GitHub Issue labels into JIRA labels (which are simple strings)
      *
      * @param issue GitHub Issue
+     * @param extraLabels Extra labels to add
      * @return JIRA Labels
      */
-    public static Object translateLabels(GHIssue issue) {
+    public static Object translateLabels(GHIssue issue, List<String> extraLabels) {
         List<String> labels = new ArrayList<>();
         for (GHLabel label : issue.getLabels()) {
             labels.add(label.getName());
+        }
+        if (CollectionUtils.isNotEmpty(extraLabels)) {
+            labels.addAll(extraLabels);
         }
         return labels;
     }
