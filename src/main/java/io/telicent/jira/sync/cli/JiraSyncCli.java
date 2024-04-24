@@ -7,6 +7,7 @@ import com.github.rvesse.airline.annotations.help.ExitCodes;
 import com.github.rvesse.airline.parser.ParseResult;
 import com.github.rvesse.airline.parser.errors.ParseException;
 import com.github.rvesse.airline.parser.errors.handlers.CollectAll;
+import com.github.rvesse.airline.parser.options.MaybeListValueOptionParser;
 import io.telicent.jira.sync.cli.commands.*;
 import io.telicent.jira.sync.cli.commands.issues.*;
 
@@ -31,7 +32,11 @@ import io.telicent.jira.sync.cli.commands.issues.*;
             defaultCommand = Help.class
         )
      },
-     parserConfiguration = @Parser(errorHandler = CollectAll.class))
+     parserConfiguration = @Parser(
+             errorHandler = CollectAll.class,
+             defaultParsersFirst = false,
+             optionParsers = { MaybeListValueOptionParser.class }
+     ))
 @ExitCodes(
     codes = { 0, 1, 2, 3 },
     descriptions = {
