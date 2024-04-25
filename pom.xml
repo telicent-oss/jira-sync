@@ -3,14 +3,14 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>io.telicent.public</groupId>
     <artifactId>jira-syncer</artifactId>
-    <version>0.2.0</version>
+    <version>0.3.0-SNAPSHOT</version>
     <name>Telicent - Jira - GitHub Issue Syncer</name>
 
     <scm>
         <connection>scm:git:https://github.com/telicent-io/jira-sync</connection>
         <developerConnection>scm:git:ssh://git@github.com/telicent-io/jira-sync</developerConnection>
         <url>https://github.com/telicent-io/jira-sync</url>
-        <tag>0.2.0</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
