@@ -1,5 +1,10 @@
 # GitHub to JIRA Sync
 
+## 0.3.0
+
+- Add new `issues type-mappings` command for previewing how your defined JIRA Issue Mappings will be applied to the
+  issues in a GitHub repository
+
 ## 0.2.0
 
 - `issues to-jira` command has significant enhancements:

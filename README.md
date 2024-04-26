@@ -197,6 +197,28 @@ practical experience of using this tool.
 Once you've created your YAML rules file, which we'll refer to as `mapping-rules.yaml`, you can provide it to [Step
 3](#step-3) via the `--jira-issue-mappings` option.
 
+Note that you can also use the `jira-sync issues type-mappings` command to preview how your defined mapping rules would
+apply to a repository e.g.
+
+```bash
+$ ./jira-sync issues type-mappings --jira-mappings mapping-rules.yaml \
+  --github-token-file /path/to/github/token \
+  --github-repository your-org/your-repo
+Reading GitHub PAT Token from file /path/to/github/token
+Showing JIRA type mappings for GitHub Issues from repository your-org/your-repo
+GitHub Issue #25 maps to JIRA Issue Type 10000
+GitHub Issue #122 maps to JIRA Issue Type 10009
+GitHub Issue #123 maps to JIRA Issue Type 10009
+GitHub Issue #124 maps to JIRA Issue Type 10011
+GitHub Issue #180 maps to JIRA Issue Type 10009
+GitHub Issue #184 maps to JIRA Issue Type 10009
+GitHub Issue #215 maps to JIRA Issue Type 10009
+GitHub Issue #218 maps to JIRA Issue Type 10000
+```
+
+You can optionally add the `--detailed` option if you want to see the title and labels of each issue that are used by
+the mapping rules to make their decisions.
+
 **NB** Alternatively, if you want all GitHub issues to map to a single JIRA Issue type regardless you can omit this step
 entirely and instead supply the `--jira-issue-type` option with the single issue type value.
 

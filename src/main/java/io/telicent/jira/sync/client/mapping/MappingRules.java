@@ -36,7 +36,11 @@ public class MappingRules {
     public long selectJiraIssueType(GHIssue issue) {
         for (IssueMappingRule rule : this.rules) {
             if (rule.matches(issue)) {
-                return rule.jiraIssueType();
+                if (rule.jiraIssueType() > 0) {
+                    return rule.jiraIssueType();
+                } else {
+                    throw new IllegalArgumentException("Rule " + rule + " MUST declare a jiraIssueType > 0");
+                }
             }
         }
         return this.defaultJiraIssueType;

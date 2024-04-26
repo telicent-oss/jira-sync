@@ -2,11 +2,13 @@ package io.telicent.jira.sync.client.mapping.rules;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.ToString;
 import org.kohsuke.github.GHIssue;
 
 /**
  * A rule which matches all issues
  */
+@ToString
 public class MatchAll extends AbstractMappingRule {
     public MatchAll(long jiraIssueType) {
         super(jiraIssueType);

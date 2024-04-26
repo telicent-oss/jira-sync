@@ -27,7 +27,8 @@ import io.telicent.jira.sync.cli.commands.issues.*;
                 Fields.class,
                 IssueTypes.class,
                 GitHubToJira.class,
-                RemoteLinks.class
+                RemoteLinks.class,
+                TypeMappings.class
             },
             defaultCommand = Help.class
         )

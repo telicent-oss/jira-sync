@@ -2,7 +2,9 @@ package io.telicent.jira.sync.client.mapping.rules;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.github.GHIssue;
 
@@ -10,6 +12,7 @@ import java.util.Collection;
 import java.util.Objects;
 
 @Getter
+@ToString
 public class TitleMatch extends AbstractMappingRule {
 
     private final String[] searchTerms;
