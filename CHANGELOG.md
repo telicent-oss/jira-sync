@@ -3,6 +3,8 @@
 ## 0.4.0
 
 - `issues cross-links` keeps searching for issues as long as at least one issue is discovered in the project
+- `to-jira` command now takes into account existing labels on the JIRA issue when applying labels from the GitHub 
+  side and ensures any pre-existing labels are preserved
 
 ## 0.3.0
 
