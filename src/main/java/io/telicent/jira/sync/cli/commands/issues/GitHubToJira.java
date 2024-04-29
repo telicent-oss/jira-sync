@@ -146,13 +146,10 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
 
         // Prepare the JIRA Issue content
         IssueRestClient issues = jiraRestClient.getIssueClient();
-        long jiraIssueType = this.jiraIssueTypeMappingOptions.getJiraIssueType(issue);
-        System.out.println("GitHub issue " + gitHubIssueId + " will be synced as JIRA Issue Type " + jiraIssueType);
         StringBuilder issuePreamble =
                 GitHubUtils.buildPreamble(issue.getUser(), issue.getCreatedAt(), issue.getUpdatedAt(), "filed an issue",
                                           issue.getHtmlUrl().toString());
-        IssueInputBuilder issueBuilder = new IssueInputBuilder().setIssueTypeId(jiraIssueType)
-                                                                .setProjectKey(this.jiraOptions.getProjectKey())
+        IssueInputBuilder issueBuilder = new IssueInputBuilder().setProjectKey(this.jiraOptions.getProjectKey())
                                                                 .setFieldInput(
                                                                         new FieldInput(IssueFieldId.DESCRIPTION_FIELD,
                                                                                        JiraUtils.translateMarkdownToAdf(
@@ -162,6 +159,13 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                                                                 .setFieldInput(new FieldInput(IssueFieldId.LABELS_FIELD,
                                                                                               GitHubUtils.translateLabels(
                                                                                                       issue, this.extraLabels)));
+        // Only set the Issue Type on new issues as previously sync'd issues may have had their issue types changed on
+        // the JIRA side since we created them, and we don't want to overwrite that
+        if (StringUtils.isBlank(jiraKey)) {
+            long jiraIssueType = this.jiraIssueTypeMappingOptions.getJiraIssueType(issue);
+            System.out.println("GitHub issue " + gitHubIssueId + " will be synced as JIRA Issue Type " + jiraIssueType);
+            issueBuilder = issueBuilder.setIssueTypeId(jiraIssueType);
+        }
         // TODO Copy assignee where relevant
 
         if (StringUtils.isNotBlank(this.jiraRepositoryField)) {

@@ -114,9 +114,12 @@ the file to [Step 3](#step-3) and it automatically keeps it up to date as it syn
 
 ### Step 2
 
-In order for the tool to know what type of JIRA issues to create you need to establish some mapping rules that tell it
-how a GitHub issue should be mapped into a JIRA issue.  The first stage of this is to run the `jira-sync issues
-jira-types` command to see what issue types your JIRA project has available:
+**NB** If you want all GitHub issues to map to a single JIRA Issue type regardless you can omit this step
+entirely and instead supply the `--jira-issue-type` option with the single issue type value.
+
+Otherwise, in order for the tool to know what type of JIRA issues to create, you need to establish some mapping rules
+that tell it how a GitHub issue should be mapped into a JIRA issue.  The first stage of this is to run the `jira-sync
+issues jira-types` command to see what issue types your JIRA project has available:
 
 ```bash
 $ ./jira-sync issues jira-types --jira-url https://yourcompany.atlassian.net \
@@ -165,7 +168,7 @@ A project or programme through which multiple epics & features will be delivered
 ```
 
 This provides you with details of the JIRA Issue Types available, the Issue Type ID being the key piece of information
-you need to define your mapping rules.  Mapping rules are defined in a simple YAML format e.g.
+you need to help define your mapping rules.  Mapping rules are defined in a simple YAML format e.g.
 
 ```yaml
 defaultJiraIssueType: 10009
@@ -218,9 +221,6 @@ GitHub Issue #218 maps to JIRA Issue Type 10000
 
 You can optionally add the `--detailed` option if you want to see the title and labels of each issue that are used by
 the mapping rules to make their decisions.
-
-**NB** Alternatively, if you want all GitHub issues to map to a single JIRA Issue type regardless you can omit this step
-entirely and instead supply the `--jira-issue-type` option with the single issue type value.
 
 ### Step 3
 

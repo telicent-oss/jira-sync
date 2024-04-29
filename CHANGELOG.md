@@ -4,6 +4,9 @@
 
 - Add new `issues type-mappings` command for previewing how your defined JIRA Issue Mappings will be applied to the
   issues in a GitHub repository
+- Apply extra sanitization when converting GitHub Issue labels into JIRA labels
+- Don't set JIRA Issue Type for previously sync'd issues so any modification to the issue type on the JIRA side is 
+  preserved
 
 ## 0.2.0
 
