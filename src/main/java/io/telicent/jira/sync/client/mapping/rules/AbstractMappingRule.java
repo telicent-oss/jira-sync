@@ -2,7 +2,9 @@ package io.telicent.jira.sync.client.mapping.rules;
 
 import io.telicent.jira.sync.client.mapping.IssueMappingRule;
 import lombok.AllArgsConstructor;
+import lombok.ToString;
 
+@ToString
 public abstract class AbstractMappingRule implements IssueMappingRule {
 
     private final long jiraIssueType;

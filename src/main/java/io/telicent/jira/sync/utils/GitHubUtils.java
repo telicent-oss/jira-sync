@@ -1,6 +1,7 @@
 package io.telicent.jira.sync.utils;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHLabel;
 import org.kohsuke.github.GHUser;
@@ -47,7 +48,7 @@ public class GitHubUtils {
      * @param user GitHub User
      * @return Human-readable username
      */
-    private static String getUsername(GHUser user)  {
+    private static String getUsername(GHUser user) {
         try {
             if (user.getName() != null) {
                 return user.getName();
@@ -66,19 +67,29 @@ public class GitHubUtils {
     /**
      * Translates GitHub Issue labels into JIRA labels (which are simple strings)
      *
-     * @param issue GitHub Issue
+     * @param issue       GitHub Issue
      * @param extraLabels Extra labels to add
      * @return JIRA Labels
      */
     public static Object translateLabels(GHIssue issue, List<String> extraLabels) {
         List<String> labels = new ArrayList<>();
         for (GHLabel label : issue.getLabels()) {
-            labels.add(label.getName());
+            labels.add(sanitiseForJira(label.getName()));
         }
         if (CollectionUtils.isNotEmpty(extraLabels)) {
-            labels.addAll(extraLabels);
+            extraLabels.stream().map(GitHubUtils::sanitiseForJira).forEach(labels::add);
         }
         return labels;
+    }
+
+    /**
+     * Sanitises a GitHub label (which may contain whitespace) into a JIRA label (which may not)
+     *
+     * @param label Label
+     * @return Sanitised label
+     */
+    public static String sanitiseForJira(String label) {
+        return label.replaceAll("\\s+", "-");
     }
 
     /**

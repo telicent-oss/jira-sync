@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
+import lombok.ToString;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.github.GHIssue;
 import org.kohsuke.github.GHLabel;
@@ -12,6 +13,7 @@ import java.util.Collection;
 import java.util.Objects;
 
 @Getter
+@ToString(callSuper = true)
 public class LabelMatch extends AbstractMappingRule {
     private final String[] labels;
 
