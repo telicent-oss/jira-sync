@@ -3,6 +3,7 @@ package io.telicent.jira.sync.cli.commands.issues;
 import com.atlassian.jira.rest.client.api.IssueRestClient;
 import com.atlassian.jira.rest.client.api.RestClientException;
 import com.atlassian.jira.rest.client.api.domain.BasicIssue;
+import com.atlassian.jira.rest.client.api.domain.Issue;
 import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
 import com.atlassian.jira.rest.client.api.domain.input.FieldInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
@@ -22,6 +23,7 @@ import io.telicent.jira.sync.client.EnhancedJiraRestClient;
 import io.telicent.jira.sync.client.model.*;
 import io.telicent.jira.sync.utils.GitHubUtils;
 import io.telicent.jira.sync.utils.JiraUtils;
+import org.apache.commons.collections4.IterableUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.github.*;
 import org.kohsuke.github.GHFileNotFoundException;
@@ -144,11 +146,20 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
             return;
         }
 
+
         // Prepare the JIRA Issue content
         IssueRestClient issues = jiraRestClient.getIssueClient();
         StringBuilder issuePreamble =
                 GitHubUtils.buildPreamble(issue.getUser(), issue.getCreatedAt(), issue.getUpdatedAt(), "filed an issue",
                                           issue.getHtmlUrl().toString());
+
+        // If already in JIRA get the existing issue as there are some fields we want to merge rather than overwrite
+        Issue existingIssue = null;
+        if (StringUtils.isNotBlank(jiraKey)) {
+            Promise<Issue> issuePromise = issues.getIssue(jiraKey, IterableUtils.emptyIterable());
+            existingIssue = issuePromise.claim();
+        }
+
         IssueInputBuilder issueBuilder = new IssueInputBuilder().setProjectKey(this.jiraOptions.getProjectKey())
                                                                 .setFieldInput(
                                                                         new FieldInput(IssueFieldId.DESCRIPTION_FIELD,
@@ -157,8 +168,8 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                                                                                                issue)))
                                                                 .setSummary(issue.getTitle())
                                                                 .setFieldInput(new FieldInput(IssueFieldId.LABELS_FIELD,
-                                                                                              GitHubUtils.translateLabels(
-                                                                                                      issue, this.extraLabels)));
+                                                                                              prepareLabels(issue,
+                                                                                                            existingIssue)));
         // Only set the Issue Type on new issues as previously sync'd issues may have had their issue types changed on
         // the JIRA side since we created them, and we don't want to overwrite that
         if (StringUtils.isBlank(jiraKey)) {
@@ -237,6 +248,27 @@ public class GitHubToJira extends JiraGitHubSyncCommand {
                 System.out.println("[DRY RUN] Would have closed GitHub Issue #" + issue.getNumber());
             }
         }
+    }
+
+    /**
+     * Prepares labels for JIRA issue creation/update.
+     * <p>
+     * This takes into account both the labels on the original GitHub issue, labels already present on the JIRA issue
+     * (if it has previously been sync'd), and any extra labels the user has supplied.
+     * </p>
+     *
+     * @param issue         GitHub Issue
+     * @param existingIssue JIRA Issue (if it already exists)
+     * @return Prepared labels
+     */
+    private Object prepareLabels(GHIssue issue, Issue existingIssue) {
+        LinkedHashSet<String> prepared = new LinkedHashSet<>();
+        if (existingIssue != null) {
+            prepared.addAll(existingIssue.getLabels());
+        }
+        prepared.addAll(GitHubUtils.translateLabels(
+                issue, this.extraLabels));
+        return new ArrayList<>(prepared);
     }
 
     private void updateCrossLinks(CrossLinks crossLinks, String gitHubId, String jiraId) throws IOException {

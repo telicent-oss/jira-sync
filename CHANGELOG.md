@@ -1,5 +1,9 @@
 # GitHub to JIRA Sync
 
+## 0.4.0
+
+- `issues cross-links` keeps searching for issues as long as at least one issue is discovered in the project
+
 ## 0.3.0
 
 - Add new `issues type-mappings` command for previewing how your defined JIRA Issue Mappings will be applied to the
