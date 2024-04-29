@@ -37,72 +37,87 @@ public class ComputeCrossLinks extends JiraProjectSyncCommand {
             CrossLinks crossLinks = this.crossLinkOptions.loadCrossLinks();
 
             SearchRestClient searchClient = jiraRestClient.getSearchClient();
-            StringBuilder jql = new StringBuilder();
-            jql.append("project = ").append(this.jiraOptions.getProjectKey());
             CrossLinkedProject jiraToGitHub = crossLinks.getJiraToGitHub();
             CrossLinkedProject githubToJira = crossLinks.getGitHubToJira();
-            String lastSyncId = jiraToGitHub.getLastSyncedIds().get(this.jiraOptions.getProjectKey());
-            if (StringUtils.isNotBlank(lastSyncId)) {
-                jql.append(" and id > ").append(lastSyncId);
-            }
-            jql.append(" order by id");
-            System.out.println("Using JQL Query:");
-            System.out.print("  ");
-            System.out.println(jql);
-            Promise<SearchResult> searchPromise = searchClient.searchJql(jql.toString());
-            int processed = 0;
-            try {
-                SearchResult searchResults = searchPromise.claim();
 
-                AsynchronousRemoteLinksClient remoteLinksClient = jiraRestClient.getRemoteLinksClient();
-                AsynchronousIssueCommentsClient commentsClient = jiraRestClient.getCommentsClient();
-                for (Issue issue : searchResults.getIssues()) {
-                    Promise<Iterable<RemoteIssueLink>> remoteLinksPromise =
-                            remoteLinksClient.getRemoteLinks(issue.getKey());
-                    Iterable<RemoteIssueLink> remoteLinks = remoteLinksPromise.claim();
-                    for (RemoteIssueLink link : remoteLinks) {
-                        if (StringUtils.startsWith(link.getGlobalId(), GITHUB_LINK_ID_PREFIX)) {
-                            String gitHubLinkId = link.getGlobalId().substring(GITHUB_LINK_ID_PREFIX.length());
-                            jiraToGitHub.setLinks(issue.getKey(), gitHubLinkId);
-                            githubToJira.setLinks(gitHubLinkId, issue.getKey());
-                            System.out.println("Discovered cross link " + issue.getKey() + " -> " + gitHubLinkId);
+            int processed;
+            do {
+                processed = 0;
+
+                // Get the last sync'd ID and use it to form our JQL query
+                String lastSyncId = jiraToGitHub.getLastSyncedIds().get(this.jiraOptions.getProjectKey());
+                StringBuilder jql = new StringBuilder();
+                jql.append("project = ").append(this.jiraOptions.getProjectKey());
+                if (StringUtils.isNotBlank(lastSyncId)) {
+                    jql.append(" and id > ").append(lastSyncId);
+                }
+                jql.append(" order by id");
+                System.out.println("Using JQL Query:");
+                System.out.print("  ");
+                System.out.println(jql);
+
+                // Search for issues, this returns at most 50 issues by default
+                Promise<SearchResult> searchPromise = searchClient.searchJql(jql.toString());
+                try {
+                    SearchResult searchResults = searchPromise.claim();
+
+                    AsynchronousRemoteLinksClient remoteLinksClient = jiraRestClient.getRemoteLinksClient();
+                    AsynchronousIssueCommentsClient commentsClient = jiraRestClient.getCommentsClient();
+                    for (Issue issue : searchResults.getIssues()) {
+                        // Get the remote links for that issue and look for the remote link this tool creates
+                        Promise<Iterable<RemoteIssueLink>> remoteLinksPromise =
+                                remoteLinksClient.getRemoteLinks(issue.getKey());
+                        Iterable<RemoteIssueLink> remoteLinks = remoteLinksPromise.claim();
+                        for (RemoteIssueLink link : remoteLinks) {
+                            if (StringUtils.startsWith(link.getGlobalId(), GITHUB_LINK_ID_PREFIX)) {
+                                String gitHubLinkId = link.getGlobalId().substring(GITHUB_LINK_ID_PREFIX.length());
+                                jiraToGitHub.setLinks(issue.getKey(), gitHubLinkId);
+                                githubToJira.setLinks(gitHubLinkId, issue.getKey());
+                                System.out.println("Discovered cross link " + issue.getKey() + " -> " + gitHubLinkId);
+                            }
                         }
-                    }
-                    jiraToGitHub.getLastSyncedIds().put(this.jiraOptions.getProjectKey(), issue.getKey());
+                        jiraToGitHub.getLastSyncedIds().put(this.jiraOptions.getProjectKey(), issue.getKey());
 
-                    Promise<Iterable<Comment>> commentsPromise = commentsClient.getComments(issue.getKey());
-                    Iterable<Comment> comments = commentsPromise.claim();
-                    Promise<Iterable<Comment>> commentsByIdPromise = commentsClient.getCommentsByIds(
-                            IterableUtils.toList(comments).stream().map(c -> c.getId().toString()).toList());
-                    comments = commentsByIdPromise.claim();
-                    for (Comment comment : comments) {
-                        CommentProperty jiraSyncProperty = comment.getProperty(JiraUtils.COMMENT_PROPERTY_KEY);
-                        if (jiraSyncProperty != null) {
-                            String gitHubCommentId = ((Map<String, String>) jiraSyncProperty.value()).get(
-                                    JiraUtils.GITHUB_COMMENT_ID_PROPERTY);
-                            String jiraCommentId = JiraUtils.getJiraCommentId(issue.getKey(), comment);
-                            jiraToGitHub.setLinks(jiraCommentId, gitHubCommentId);
-                            githubToJira.setLinks(gitHubCommentId, jiraCommentId);
-                            System.out.println("Discovered cross link " + jiraCommentId + " -> " + gitHubCommentId);
+                        // Process the comments for the issue
+                        // Again look for the comment property this tool creates
+                        Promise<Iterable<Comment>> commentsPromise = commentsClient.getComments(issue.getKey());
+                        Iterable<Comment> comments = commentsPromise.claim();
+                        Promise<Iterable<Comment>> commentsByIdPromise = commentsClient.getCommentsByIds(
+                                IterableUtils.toList(comments).stream().map(c -> c.getId().toString()).toList());
+                        comments = commentsByIdPromise.claim();
+                        for (Comment comment : comments) {
+                            CommentProperty jiraSyncProperty = comment.getProperty(JiraUtils.COMMENT_PROPERTY_KEY);
+                            if (jiraSyncProperty != null) {
+                                @SuppressWarnings("unchecked")
+                                String gitHubCommentId = ((Map<String, String>) jiraSyncProperty.value()).get(
+                                        JiraUtils.GITHUB_COMMENT_ID_PROPERTY);
+                                String jiraCommentId = JiraUtils.getJiraCommentId(issue.getKey(), comment);
+                                jiraToGitHub.setLinks(jiraCommentId, gitHubCommentId);
+                                githubToJira.setLinks(gitHubCommentId, jiraCommentId);
+                                System.out.println("Discovered cross link " + jiraCommentId + " -> " + gitHubCommentId);
+                            }
                         }
+
+                        processed++;
                     }
 
-                    processed++;
+                    if (processed > 0) {
+                        System.out.println(
+                                "Processed " + processed + " issues from JIRA Project " + this.jiraOptions.getProjectKey());
+
+                        // Save the computed cross-links
+                        this.crossLinkOptions.saveCrossLinks();
+                    } else {
+                        System.out.println("No new issues found in JIRA Project " + this.jiraOptions.getProjectKey());
+                    }
+
+                } catch (RestClientException e) {
+                    reportJiraRestError(e);
+                    return 1;
                 }
 
-                if (processed > 0) {
-                    System.out.println(
-                            "Processed " + processed + " issues from JIRA Project " + this.jiraOptions.getProjectKey());
-
-                    // Save the computed cross-links
-                    this.crossLinkOptions.saveCrossLinks();
-                } else {
-                    System.out.println("No new issues found in JIRA Project " + this.jiraOptions.getProjectKey());
-                }
-            } catch (RestClientException e) {
-                reportJiraRestError(e);
-                return 1;
-            }
+                // If we found at least one issue this time then we'll go round the loop and query again
+            } while (processed > 0);
 
             return 0;
         } catch (IOException e) {

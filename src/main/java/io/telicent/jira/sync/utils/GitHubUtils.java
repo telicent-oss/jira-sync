@@ -71,7 +71,7 @@ public class GitHubUtils {
      * @param extraLabels Extra labels to add
      * @return JIRA Labels
      */
-    public static Object translateLabels(GHIssue issue, List<String> extraLabels) {
+    public static List<String> translateLabels(GHIssue issue, List<String> extraLabels) {
         List<String> labels = new ArrayList<>();
         for (GHLabel label : issue.getLabels()) {
             labels.add(sanitiseForJira(label.getName()));
