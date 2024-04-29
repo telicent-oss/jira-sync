@@ -18,7 +18,7 @@
 
         <plugin.assembly>3.7.1</plugin.assembly>
         <plugin.javadoc>3.6.3</plugin.javadoc>
-        <plugin.shade>3.5.2</plugin.shade>
+        <plugin.shade>3.5.3</plugin.shade>
         <plugin.surefire>3.2.5</plugin.surefire>
 
         <dependency.airline>3.0.0</dependency.airline>
