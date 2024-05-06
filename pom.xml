@@ -83,7 +83,7 @@
         <dependency>
             <groupId>com.atlassian.jira</groupId>
             <artifactId>jira-api</artifactId>
-            <version>7.6.1</version>
+            <version>8.23.0-QR-20220216045940</version>
             <exclusions>
                 <exclusion>
                     <groupId>jta</groupId>
