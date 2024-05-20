@@ -22,12 +22,12 @@
         <plugin.surefire>3.2.5</plugin.surefire>
 
         <dependency.airline>3.0.0</dependency.airline>
-        <dependency.adf>0.38.0</dependency.adf>
+        <dependency.adf>0.40.0</dependency.adf>
         <dependency.github>1.321</dependency.github>
-        <dependency.jackson>2.17.0</dependency.jackson>
-        <dependency.mockito>5.11.0</dependency.mockito>
+        <dependency.jackson>2.17.1</dependency.jackson>
+        <dependency.mockito>5.12.0</dependency.mockito>
         <dependency.okhttp>4.12.0</dependency.okhttp>
-        <dependency.testng>7.10.1</dependency.testng>
+        <dependency.testng>7.10.2</dependency.testng>
     </properties>
 
     <dependencies>
@@ -113,7 +113,7 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.1.0-jre</version>
+            <version>33.2.0-jre</version>
         </dependency>
 
         <!-- Atlassian Document Format -->
